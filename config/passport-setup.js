@@ -12,33 +12,36 @@ const getUserById = async (id) => {
 
 // local
 passport.use(
-  new LocalStrategy(
-    {
-      //options for the strategy
-      // default username, password
-    },
-    async (username, password, done) => {
-      try {
-        const db_user = await User.findOne({ username });
+  new LocalStrategy({}, async (username, password, done) => {
+    try {
+      console.log("here");
 
-        if (!db_user)
-          return done(null, false, { message: "no user with this username" });
+      const db_user = await User.findOne({ username });
 
-        const passwordCheck = await bcrypt.compare(password, db_user.password);
+      if (!db_user)
+        return done(null, false, {
+          index: 0,
+          message: "No User with this User Name",
+        });
 
-        if (db_user.username !== username || !passwordCheck)
-          return done(null, false, { message: "user or password is wrong" });
+      const passwordCheck = await bcrypt.compare(password, db_user.password);
 
-        return done(null, db_user);
-      } catch (err) {
-        return done(err);
-      }
+      if (!passwordCheck)
+        return done(null, false, {
+          index: 1,
+          message: "Password is Wrong",
+        });
+
+      return done(null, db_user);
+    } catch (err) {
+      console.log(err);
+      return done("Something Went Wrong");
     }
-  )
+  })
 );
 
 passport.serializeUser((user, done) => {
-  console.log(user.id);
+  console.log(user);
   return done(null, user.id);
 });
 
