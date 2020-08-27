@@ -2,7 +2,13 @@ const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const session = require("express-session");
+const mongoStore = require("connect-mongo")(session);
+const sessionStore = new mongoStore({
+  mongooseConnection: mongoose.connection,
+});
 const passport = require("passport");
+const passportSocketIo = require("passport.socketio");
+const cookieParser = require("cookie-parser");
 
 const path = require("path");
 
@@ -13,12 +19,14 @@ const port = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
-
+app.use(cookieParser());
 app.use(
   session({
     secret: process.env.COOKIE_SECRET,
     resave: false,
     saveUninitialized: false,
+    store: sessionStore,
+    cookie: { maxAge: 180 * 60 * 1000 },
   })
 );
 app.use(passport.initialize());
@@ -37,17 +45,64 @@ connection.once("open", () => {
 });
 
 const authRouter = require("./routes/auth");
+const User = require("./models/user.model");
+
+const chatRouter = require("./routes/chat").router;
 
 app.use("/auth", authRouter);
+app.use("/chat", chatRouter);
+
+// testing
+
+const server = require("http").createServer(app);
+const io = require("socket.io")(server);
+
+io.use(
+  passportSocketIo.authorize({
+    cookieParser: cookieParser, // the same middleware you registrer in express
+    key: "connect.sid", // the name of the cookie where express/connect stores its session_id
+    secret: process.env.COOKIE_SECRET, // the session_secret to parse the cookie
+    store: sessionStore, // we NEED to use a sessionstore. no memorystore please
+  })
+);
+
+io.on("connection", mainChat);
+
+server.listen(port, function () {
+  console.log(`Server is running on port: ${port}`);
+});
+
+const saveMessage = require("./logic/extra").saveMessage;
+
+function mainChat(socket) {
+  console.log("connected");
+  socket.on("message", async (msg) => {
+    console.log("before");
+    console.log(msg);
+    const username = socket.request.user.username;
+    // if the user isn't authenticated
+    if (!socket.request.user) return;
+    console.log("after");
+
+    // send message to receiver
+    io.sockets.emit(msg.receiver, {
+      sender: username,
+      message: msg.message,
+    });
+
+    // send message to sender (as a confirmation)
+    io.sockets.emit(username, {
+      sender: username,
+      receiver: msg.receiver,
+      message: msg.message,
+    });
+
+    saveMessage(username, msg);
+  });
+}
 
 // for production
-/*app.use(express.static("../mern-test/build"));
+app.use(express.static("./build"));
 app.get("*", (req, res) => {
-  res.sendFile(
-    path.resolve(__dirname, "..", "mern-test", "build", "index.html")
-  );
-});*/
-
-app.listen(port, () => {
-  console.log(`Server is running on port: ${port}`);
+  res.sendFile(path.resolve(__dirname, ".", "build", "index.html"));
 });

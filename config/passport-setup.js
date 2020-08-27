@@ -14,8 +14,6 @@ const getUserById = async (id) => {
 passport.use(
   new LocalStrategy({}, async (username, password, done) => {
     try {
-      console.log("here");
-
       const db_user = await User.findOne({ username });
 
       if (!db_user)
@@ -41,10 +39,10 @@ passport.use(
 );
 
 passport.serializeUser((user, done) => {
-  console.log(user);
   return done(null, user.id);
 });
 
-passport.deserializeUser((id, done) => {
-  return done(null, getUserById(id));
+passport.deserializeUser(async (id, done) => {
+  const user = await getUserById(id);
+  return done(null, user);
 });

@@ -3,12 +3,13 @@ const User = require("../models/user.model");
 const bcrypt = require("bcrypt");
 const passportSetup = require("../config/passport-setup");
 const passport = require("passport");
+const { addFriends } = require("../logic/extra");
 
 // remove later
 router.get("/", async (req, res) => {
+  console.log(req.user);
   User.find()
     .then((users) => {
-      console.log(users);
       res.json(users);
     })
     .catch((err) => res.status(400).json(`Error: ${err}`));
@@ -50,7 +51,7 @@ router.route("/register").post(async (req, res) => {
 });
 
 router.post("/login", function (req, res, next) {
-  passport.authenticate("local", { session: false }, function (
+  passport.authenticate("local", { session: false }, async function (
     err,
     user,
     info
@@ -73,15 +74,41 @@ router.post("/login", function (req, res, next) {
           );
       return res.status(400).send(JSON.stringify(info));
     }
-    req.logIn(user, function (err) {
+
+    // temperoraly making everyone friends
+    const updated_user = await addFriends(user.username);
+
+    req.logIn(user, async function (err) {
       if (err) {
         return next(err);
       }
 
-      const user = { username: req.user.username };
+      const user = {
+        username: updated_user.username,
+        friends: updated_user.friends,
+      };
       res.send(JSON.stringify(user));
     });
   })(req, res, next);
+});
+
+router.get("/check/loggedin", async (req, res) => {
+  // loggedIn
+  const data = { loggedIn: req.isAuthenticated() };
+
+  if (req.isAuthenticated()) {
+    const updated_user = await addFriends(req.user.username);
+
+    // user and friends
+    data.user = {
+      username: updated_user.username,
+      friends: updated_user.friends,
+    };
+  } else {
+    data.user = {};
+  }
+
+  res.send(JSON.stringify(data));
 });
 
 router.get("/logout", (req, res) => {
@@ -89,31 +116,10 @@ router.get("/logout", (req, res) => {
   res.send(JSON.stringify("logged out"));
 });
 
-router.get("/check/loggedin", (req, res) => {
-  const data = { loggedIn: req.isAuthenticated() };
-
-  res.send(JSON.stringify(data));
-});
-
 router.post("/check/username", async (req, res) => {
   const lenght = (await User.find({ username: req.body.username })).length;
 
   res.send(JSON.stringify(lenght === 0));
 });
-
-/*router.get("/:id", (req, res) => {
-  res.send(req.params.id);
-});*/
-
-// Testing area
-/*router.delete("/remove", async (req, res) => {
-  try {
-    await User.deleteOne({ _id: req.body._id });
-
-    res.status(200).send(`user deleted`);
-  } catch (err) {
-    res.status(400).send(`${err}`);
-  }
-});*/
 
 module.exports = router;

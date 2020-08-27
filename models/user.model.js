@@ -17,6 +17,19 @@ const userSchema = new Schema(
       trim: true,
       minlength: 3,
     },
+    // check the object schema
+    friends: [
+      {
+        username: String,
+        messages: [
+          {
+            sender: String,
+            message: String,
+            time: { type: Date, default: Date.now },
+          },
+        ],
+      },
+    ],
   },
   { timestamps: true }
 );
