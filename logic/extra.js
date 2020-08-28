@@ -5,8 +5,6 @@ async function addFriends(username) {
   const user = await User.findOne({ username });
   const users = await User.find();
 
-  console.log(user);
-
   users.map((map_user) => {
     // condition so we don't push the user in his own friend list
     if (map_user.username !== user.username) {
@@ -61,6 +59,8 @@ async function saveMessage(username, msg) {
 
     receiver.friends = receiver.friends.map((friend) => {
       if (friend.username === username) {
+        // making the message unRead
+        friend.unRead = true;
         friend.messages.push({
           sender: username,
           message: msg.message,

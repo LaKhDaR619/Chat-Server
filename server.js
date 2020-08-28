@@ -46,6 +46,7 @@ connection.once("open", () => {
 
 const authRouter = require("./routes/auth");
 const User = require("./models/user.model");
+const nodemon = require("nodemon");
 
 const chatRouter = require("./routes/chat").router;
 
@@ -77,12 +78,9 @@ const saveMessage = require("./logic/extra").saveMessage;
 function mainChat(socket) {
   console.log("connected");
   socket.on("message", async (msg) => {
-    console.log("before");
-    console.log(msg);
     const username = socket.request.user.username;
     // if the user isn't authenticated
     if (!socket.request.user) return;
-    console.log("after");
 
     // send message to receiver
     io.sockets.emit(msg.receiver, {
@@ -102,7 +100,10 @@ function mainChat(socket) {
 }
 
 // for production
-app.use(express.static("./build"));
-app.get("*", (req, res) => {
-  res.sendFile(path.resolve(__dirname, ".", "build", "index.html"));
-});
+if (process.env.NODE_ENV == "production") {
+  console.log("working on production");
+  app.use(express.static("./client/build"));
+  app.get("*", (req, res) => {
+    res.sendFile(path.resolve(__dirname, ".", "client", "build", "index.html"));
+  });
+}

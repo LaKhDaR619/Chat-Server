@@ -4,21 +4,29 @@ const User = require("../models/user.model");
 const sockets = {};
 
 // routes
-router.get("/friends", async (req, res) => {
-  let result = [];
-
+router.post("/messageRead", async (req, res) => {
+  console.log("req.body");
+  console.log(req.body);
   if (!req.isAuthenticated()) return res.status(401);
+  try {
+    // friend user name
+    const friendName = req.body.friendName;
+    console.log(friendName);
+    const user = await User.findById(req.user.id);
+    const index = user.friends.findIndex((item) => item.username == friendName);
 
-  await User.findById(req.user.id)
-    .then((user) => {
-      result = user.friends;
-    })
-    .catch((err) => res.status(400).json(`Error: ${err}`));
+    user.friends[index].unRead = false;
+    user.markModified("friends");
+    await user.save();
 
-  res.json(result);
+    return res.json(true);
+  } catch (err) {
+    console.log(err);
+    res.status(500).send("Something went Wrong");
+  }
 });
 
-router.get("/messages", async (req, res) => {
+/*router.get("/messages", async (req, res) => {
   let result = [];
 
   if (!req.isAuthenticated()) return res.status(401);
@@ -49,6 +57,6 @@ router.get("/addfriends", async (req, res) => {
     .catch((err) => res.status(400).json(`Error: ${err}`));
 
   res.json(result);
-});
+});*/
 
 exports.router = router;
