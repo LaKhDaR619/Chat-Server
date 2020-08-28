@@ -34,43 +34,59 @@ async function saveMessage(username, msg) {
     // setting senders friends array
     const user = await User.findOne({ username });
 
-    user.friends = user.friends.map((friend) => {
-      if (friend.username === msg.receiver) {
-        friend.messages.push({
-          sender: username,
-          message: msg.message,
-        });
-      }
-      return friend;
-    });
+    const friendIndex = user.friends.findIndex(
+      (friend) => friend.username === msg.receiver
+    );
 
-    user.markModified("friends");
-    await user.save();
+    if (friendIndex !== -1) {
+      user.friends[friendIndex].messages.push({
+        sender: username,
+        message: msg.message,
+      });
+
+      user.markModified("friends");
+      await user.save();
+    }
 
     // setting receiver friends array
     const receiver = await User.findOne({ username: msg.receiver });
 
-    // if the sender isn't on his friend list
-    if (!receiver.friends.find((friend) => friend.username === username)) {
-      receiver.friends.push({ username, messages: [] });
-      console.log("new friends");
-      console.log(user.friends[user.friends.length - 1]);
-    }
+    // if the receiver exists
+    if (receiver) {
+      // if the sender isn't on his friend list
+      if (!receiver.friends.find((friend) => friend.username === username)) {
+        receiver.friends.splice(0, 0, {
+          username,
+          messages: [{ sender: username, message: msg.message }],
+          unRead: true,
+        });
+        //receiver.friends.push({ username, messages: [], unRead: true });
+        console.log("new friends");
+        console.log(user.friends[0]);
+      }
+      // if the sender is on his friend list
+      else {
+        const senderIndex = receiver.friends.findIndex(
+          (friend) => friend.username === username
+        );
 
-    receiver.friends = receiver.friends.map((friend) => {
-      if (friend.username === username) {
-        // making the message unRead
-        friend.unRead = true;
-        friend.messages.push({
+        receiver.friends[senderIndex].unRead = true;
+        receiver.friends[senderIndex].messages.push({
           sender: username,
           message: msg.message,
         });
-      }
-      return friend;
-    });
 
-    receiver.markModified("friends");
-    await receiver.save();
+        // getting the sender friend from the array
+        const friend = receiver.friends[senderIndex];
+        //delteting the friend from the array
+        receiver.friends.splice(senderIndex, 1);
+        // pushing it again at the beggining
+        receiver.friends.splice(0, 0, friend);
+      }
+
+      receiver.markModified("friends");
+      await receiver.save();
+    }
   } catch (err) {
     console.log(err);
   }

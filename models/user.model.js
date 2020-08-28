@@ -21,7 +21,7 @@ const userSchema = new Schema(
     friends: [
       {
         username: String,
-        unRead: { type: Boolean, default: true },
+        unRead: { type: Boolean, default: false },
         messages: [
           {
             sender: String,
