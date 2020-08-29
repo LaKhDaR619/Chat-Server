@@ -26,37 +26,4 @@ router.post("/messageRead", async (req, res) => {
   }
 });
 
-/*router.get("/messages", async (req, res) => {
-  let result = [];
-
-  if (!req.isAuthenticated()) return res.status(401);
-
-  await User.find()
-    .then((users) => {
-      result = users.map((user) => {
-        const temp = { username: user.username };
-        return temp;
-      });
-    })
-    .catch((err) => res.status(400).json(`Error: ${err}`));
-
-  res.json(result);
-});
-
-router.get("/addfriends", async (req, res) => {
-  let result = [];
-  if (!req.isAuthenticated()) return res.status(401);
-
-  await User.find()
-    .then((users) => {
-      result = users.map((user) => {
-        const temp = { id: user.id, username: user.username };
-        return temp;
-      });
-    })
-    .catch((err) => res.status(400).json(`Error: ${err}`));
-
-  res.json(result);
-});*/
-
 exports.router = router;

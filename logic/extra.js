@@ -44,9 +44,18 @@ async function saveMessage(username, msg) {
         message: msg.message,
       });
 
+      // getting the friend from the array
+      const friend = user.friends[friendIndex];
+      //delteting the friend from the array
+      user.friends.splice(friendIndex, 1);
+      // pushing it again at the beggining
+      user.friends.splice(0, 0, friend);
+
       user.markModified("friends");
       await user.save();
     }
+    // if the friend doesn't exist
+    else return;
 
     // setting receiver friends array
     const receiver = await User.findOne({ username: msg.receiver });

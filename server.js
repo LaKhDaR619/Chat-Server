@@ -26,7 +26,7 @@ app.use(
     resave: false,
     saveUninitialized: false,
     store: sessionStore,
-    cookie: { maxAge: 180 * 60 * 1000 },
+    cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 }, // 30 days
   })
 );
 app.use(passport.initialize());
@@ -52,8 +52,6 @@ const chatRouter = require("./routes/chat").router;
 
 app.use("/auth", authRouter);
 app.use("/chat", chatRouter);
-
-// testing
 
 const server = require("http").createServer(app);
 const io = require("socket.io")(server);
