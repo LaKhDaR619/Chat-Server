@@ -75,6 +75,8 @@ router.post("/login", function (req, res, next) {
       return res.status(400).send(JSON.stringify(info));
     }
 
+    console.log(user.username);
+
     // temperoraly making everyone friends
     const updated_user = await addFriends(user.username);
 

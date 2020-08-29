@@ -77,6 +77,9 @@ function mainChat(socket) {
   console.log("connected");
   socket.on("message", async (msg) => {
     const username = socket.request.user.username;
+    console.log("====================================");
+    console.log(username);
+    console.log("====================================");
     // if the user isn't authenticated
     if (!socket.request.user) return;
 
