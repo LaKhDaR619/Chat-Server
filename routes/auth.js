@@ -5,16 +5,6 @@ const passportSetup = require("../config/passport-setup");
 const passport = require("passport");
 const { addFriends } = require("../logic/extra");
 
-// remove later
-router.get("/", async (req, res) => {
-  console.log(req.user);
-  User.find()
-    .then((users) => {
-      res.json(users);
-    })
-    .catch((err) => res.status(400).json(`Error: ${err}`));
-});
-
 router.route("/register").post(async (req, res) => {
   try {
     const username = req.body.username;
