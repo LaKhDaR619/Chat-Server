@@ -1,31 +1,5 @@
 const User = require("../models/user.model");
 
-async function addFriends(username) {
-  // temperoraly making everyone friends
-  const user = await User.findOne({ username });
-  const users = await User.find();
-
-  users.map((map_user) => {
-    // condition so we don't push the user in his own friend list
-    if (map_user.username !== user.username) {
-      // if the friend already exists don't push it
-      if (
-        !user.friends.find((friend) => friend.username === map_user.username)
-      ) {
-        user.friends.push({
-          username: map_user.username,
-          messages: [],
-        });
-        console.log("new friends");
-        console.log(user.friends[user.friends.length - 1]);
-      }
-    }
-  });
-  await user.save();
-
-  return user;
-}
-
 async function saveMessage(username, msg) {
   console.log(`sender: ${username}`);
   console.log(`receiver: ${msg.receiver}`);
@@ -69,7 +43,7 @@ async function saveMessage(username, msg) {
           messages: [{ sender: username, message: msg.message }],
           unRead: true,
         });
-        //receiver.friends.push({ username, messages: [], unRead: true });
+
         console.log("new friends");
         console.log(user.friends[0]);
       }
@@ -101,5 +75,4 @@ async function saveMessage(username, msg) {
   }
 }
 
-module.exports.addFriends = addFriends;
 module.exports.saveMessage = saveMessage;

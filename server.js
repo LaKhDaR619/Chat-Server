@@ -44,15 +44,6 @@ connection.once("open", () => {
   console.log("MongoDB database connection established successfully");
 });
 
-const authRouter = require("./routes/auth");
-const User = require("./models/user.model");
-const nodemon = require("nodemon");
-
-const chatRouter = require("./routes/chat").router;
-
-app.use("/auth", authRouter);
-app.use("/chat", chatRouter);
-
 const server = require("http").createServer(app);
 const io = require("socket.io")(server);
 
@@ -67,6 +58,13 @@ io.use(
 
 io.on("connection", mainChat);
 
+const authRouter = require("./routes/auth");
+const chatRouter = require("./routes/chat");
+const User = require("./models/user.model");
+
+app.use("/auth", authRouter);
+app.use("/chat", chatRouter(io));
+
 server.listen(port, function () {
   console.log(`Server is running on port: ${port}`);
 });
@@ -74,9 +72,10 @@ server.listen(port, function () {
 const saveMessage = require("./logic/extra").saveMessage;
 
 function mainChat(socket) {
-  console.log("connected");
+  const username = socket.request.user.username;
+  if (!username) return;
+  console.log(`connected to: ${username}`);
   socket.on("message", async (msg) => {
-    const username = socket.request.user.username;
     // if the user isn't authenticated
     if (!socket.request.user) return;
 
@@ -94,6 +93,34 @@ function mainChat(socket) {
     });
 
     saveMessage(username, msg);
+  });
+
+  socket.on("typing", (typing) => {
+    console.log(`${username} is typing`);
+    io.sockets.emit("typing", {
+      typing,
+      typer: username,
+    });
+  });
+
+  socket.on("disconnect", () => {
+    User.findOne({ username })
+      .then((user) => {
+        const friends = user.friends.map((friend) => {
+          friend.typing = false;
+          return friend;
+        });
+
+        user.friends = friends;
+        user.markModified("friends");
+        user.save;
+
+        io.sockets.emit("typing", {
+          typing: false,
+          typer: username,
+        });
+      })
+      .catch((err) => console.log(err));
   });
 }
 

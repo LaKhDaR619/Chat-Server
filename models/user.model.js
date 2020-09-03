@@ -22,6 +22,7 @@ const userSchema = new Schema(
       {
         username: String,
         unRead: { type: Boolean, default: false },
+        typing: { type: Boolean, default: false },
         messages: [
           {
             sender: String,

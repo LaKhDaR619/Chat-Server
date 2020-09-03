@@ -3,7 +3,6 @@ const User = require("../models/user.model");
 const bcrypt = require("bcrypt");
 const passportSetup = require("../config/passport-setup");
 const passport = require("passport");
-const { addFriends } = require("../logic/extra");
 
 router.route("/register").post(async (req, res) => {
   try {
@@ -65,20 +64,19 @@ router.post("/login", function (req, res, next) {
       return res.status(400).send(JSON.stringify(info));
     }
 
-    console.log(user.username);
-
-    // temperoraly making everyone friends
-    const updated_user = await addFriends(user.username);
-
     req.logIn(user, async function (err) {
       if (err) {
         return next(err);
       }
 
+      console.log(req.user);
+
       const user = {
-        username: updated_user.username,
-        friends: updated_user.friends,
+        username: req.user.username,
+        id: req.user.id,
+        friends: req.user.friends,
       };
+      console.log(user);
       res.send(JSON.stringify(user));
     });
   })(req, res, next);
@@ -89,17 +87,17 @@ router.get("/check/loggedin", async (req, res) => {
   const data = { loggedIn: req.isAuthenticated() };
 
   if (req.isAuthenticated()) {
-    const updated_user = await addFriends(req.user.username);
+    const user = req.user;
 
     // user and friends
     data.user = {
-      username: updated_user.username,
-      friends: updated_user.friends,
+      username: user.username,
+      id: user.id,
+      friends: user.friends,
     };
   } else {
     data.user = {};
   }
-
   res.send(JSON.stringify(data));
 });
 
