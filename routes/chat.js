@@ -87,7 +87,9 @@ module.exports = function (io) {
         friend.markModified("friends");
         friend.save();
 
+        // emiting so the other user add us as a friend
         io.sockets.emit(friend.username, {
+          type: "addFriend",
           friend: {
             username: user.username,
             id: user.id,

@@ -81,12 +81,14 @@ function mainChat(socket) {
 
     // send message to receiver
     io.sockets.emit(msg.receiver, {
+      type: "receive",
       sender: username,
       message: msg.message,
     });
 
     // send message to sender (as a confirmation)
     io.sockets.emit(username, {
+      type: "confirm",
       sender: username,
       receiver: msg.receiver,
       message: msg.message,
@@ -95,10 +97,12 @@ function mainChat(socket) {
     saveMessage(username, msg);
   });
 
-  socket.on("typing", (typing) => {
+  socket.on("typing", (msg) => {
     console.log(`${username} is typing`);
-    io.sockets.emit("typing", {
-      typing,
+    console.log(msg);
+    io.sockets.emit(msg.friend, {
+      type: "typing",
+      typing: msg.typing,
       typer: username,
     });
   });
@@ -106,7 +110,14 @@ function mainChat(socket) {
   socket.on("disconnect", () => {
     User.findOne({ username })
       .then((user) => {
+        // making all his friends not typing
         const friends = user.friends.map((friend) => {
+          io.sockets.emit(friend.username, {
+            type: "typing",
+            typing: false,
+            typer: username,
+          });
+
           friend.typing = false;
           return friend;
         });
@@ -114,11 +125,6 @@ function mainChat(socket) {
         user.friends = friends;
         user.markModified("friends");
         user.save;
-
-        io.sockets.emit("typing", {
-          typing: false,
-          typer: username,
-        });
       })
       .catch((err) => console.log(err));
   });
